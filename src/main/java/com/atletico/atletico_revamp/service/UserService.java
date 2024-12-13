@@ -34,4 +34,6 @@ public class UserService {
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
+
+    // Next is to create methods to handle user passwords (hashing / updating)
 }

@@ -15,6 +15,7 @@ import com.atletico.atletico_revamp.dto.DataResponse;
 import com.atletico.atletico_revamp.entities.User;
 import com.atletico.atletico_revamp.service.UserService;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,7 +63,8 @@ public class UserController {
         }
     }
 
-    @GetMapping("/{id}")
+    // Get User by id
+    @GetMapping("/get/{id}")
     public ResponseEntity<DataResponse<User>> getUserById(@PathVariable Long id) {
         try {
             // Try to get User
@@ -80,12 +82,22 @@ public class UserController {
 
                 // Return User
                 return ResponseEntity.status(HttpStatus.OK).body(response);
-            } else {
-                throw new Error("Unable to find user with id " + id);
-            }
+            } 
+
+            log.warn("Attempting to get non existent user with id {}", id);
+
+            DataResponse<User> response = new DataResponse<>(
+                false,
+                "fail",  
+                "Unable to find user of id " + id, 
+                null
+            );
+
+            // Return error
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         } catch (Exception e) {
             // Log error
-            log.error("Error retrieving user", e);
+            log.error("Error retrieving user of id {}", id, e);
 
             // Build failed data response
             DataResponse<User> errorResponse = new DataResponse<>(
@@ -98,5 +110,48 @@ public class UserController {
                     .body(errorResponse);
         }
     }
-    
+
+    // Delete User
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<BaseResponse> deleteUserById(@PathVariable Long id) {
+        try {
+            // Check if user exists before attempting delete operation
+            Optional<User> user = userService.getUserById(id);
+            if (user.isEmpty()) {
+
+                log.warn("Attempted to delete non-existent user with id {}", id);
+
+                // Build not found response
+                BaseResponse response = new BaseResponse(
+                    false,
+                    "fail",
+                    "User with id " + id + " does not exist"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            // Delete user if found
+            userService.deleteUser(id);
+            log.info("Deleted user with id {}", id);
+
+            // Build success response
+            BaseResponse response = new BaseResponse(
+                true,
+                "success",
+                "User with id " + id + " successfully deleted"
+            );
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+
+        } catch (Exception e) {
+            // Log error
+            log.error("Error deleting user with id {}", id, e.getMessage(), e);
+
+            BaseResponse errorResponse = new BaseResponse(
+                false,
+                "fail",
+                "Error deleting user with id " + id + ": " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 }

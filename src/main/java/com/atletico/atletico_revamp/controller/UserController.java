@@ -26,9 +26,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/api/users")
 public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
+
+    private final UserService userService;
     
     @Autowired
-    private UserService userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     // Create or Update a User
     @PostMapping

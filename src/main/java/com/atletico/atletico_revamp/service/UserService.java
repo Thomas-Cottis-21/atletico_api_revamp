@@ -12,8 +12,12 @@ import com.atletico.atletico_revamp.repository.UserRepository;
 @Service
 public class UserService {
     
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     // Create or Update a User
     public User saveUser(User user) {

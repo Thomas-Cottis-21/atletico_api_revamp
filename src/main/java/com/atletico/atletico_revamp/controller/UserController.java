@@ -119,7 +119,7 @@ public class UserController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<BaseResponse> deleteUserById(@PathVariable Long id) {
         try {
-            // Check if user exists before attempting delete operation
+            // Check if user exists before attempting to delete user
             Optional<User> user = userService.getUserById(id);
             if (user.isEmpty()) {
 

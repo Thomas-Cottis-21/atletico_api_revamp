@@ -4,20 +4,27 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.util.Date;
-import java.util.List;
 
-public class JwtTokenProvider {
+@Component
+public class JwtUtility {
 
     @Value("${jwt.secret-key}")
     private String SECRET_KEY;
     @Value("${jwt.validity}")
     private long VALIDITY_IN_MS;
 
-    public String createToken(String username, List<String> roles) {
+    /**
+     * Generates new JWT based on user data
+     *
+     * @param username Username stored in database; given and verified during login (before token generation)
+     * @return A JWT
+     */
+    public String createToken(String username) {
         // Generate secret key object
         byte[] secretKeyBytes = SECRET_KEY.getBytes();
         Key key = new SecretKeySpec(secretKeyBytes, SignatureAlgorithm.HS256.getJcaName());

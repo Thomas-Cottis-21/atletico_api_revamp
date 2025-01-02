@@ -2,23 +2,33 @@ package com.atletico.atletico_revamp.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Value("${jwt.secret-key}")
     private String SECRET_KEY;
+
+    @Autowired
+    public JwtAuthenticationFilter() {
+    }
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     // doFilterInternal performs filtering logic in the request processing pipeline
     // It is invoked during each HTTP request (basically middleware)
@@ -32,10 +42,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         // Extracts token
         String token = resolveToken(request);
+        logger.info(token);
         if (token != null && validateToken(token)) {
             Authentication auth = getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(auth);
+        } else {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid or expired token");
         }
+
         filterChain.doFilter(request, response);
     }
 
@@ -49,6 +64,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean validateToken(String token) {
         try {
+            logger.info("TOKEN: {}", token);
+            logger.info("SECRET_KEY{}", SECRET_KEY);
             // Token validation logic
             Jwts.parserBuilder()
                     .setSigningKey(SECRET_KEY.getBytes())

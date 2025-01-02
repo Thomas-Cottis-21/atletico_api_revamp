@@ -1,5 +1,6 @@
 package com.atletico.atletico_revamp.security;
 
+import com.atletico.atletico_revamp.config.JwtConfigurationProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
@@ -9,7 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,11 +21,11 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Value("${jwt.secret-key}")
-    private String SECRET_KEY;
+    private final JwtConfigurationProperties jwtConfigurationProperties;
 
     @Autowired
-    public JwtAuthenticationFilter() {
+    public JwtAuthenticationFilter(JwtConfigurationProperties jwtConfigurationProperties) {
+        this.jwtConfigurationProperties = jwtConfigurationProperties;
     }
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
@@ -41,14 +41,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         // Extracts token
+        logger.info("Extracting token...");
         String token = resolveToken(request);
-        logger.info(token);
+        logger.info("TOKEN{}", token);
+        logger.info("SECRET_KEY{}", jwtConfigurationProperties.getSecretKey());
         if (token != null && validateToken(token)) {
+            logger.info("Token validated");
+            logger.info("Setting authentication context");
             Authentication auth = getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(auth);
         } else {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Invalid or expired token");
+            logger.info("Token not validated");
         }
 
         filterChain.doFilter(request, response);
@@ -64,15 +67,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean validateToken(String token) {
         try {
-            logger.info("TOKEN: {}", token);
-            logger.info("SECRET_KEY{}", SECRET_KEY);
             // Token validation logic
             Jwts.parserBuilder()
-                    .setSigningKey(SECRET_KEY.getBytes())
+                    .setSigningKey(jwtConfigurationProperties.getSecretKey().getBytes())
                     .build()
                     .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
+            logger.info(e.getMessage());
             return false;
         }
     }
@@ -90,7 +92,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private Claims getClaimsFromToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY.getBytes())
+                .setSigningKey(jwtConfigurationProperties.getSecretKey().getBytes())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

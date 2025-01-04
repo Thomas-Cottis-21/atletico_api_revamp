@@ -1,6 +1,7 @@
 package com.atletico.atletico_revamp.utility.security;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 public final class PasswordUtility {
     private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder();
@@ -14,22 +15,16 @@ public final class PasswordUtility {
 
     /**
      * Hashes the given password using BCrypt
+     * Used to hash passwords before storing in database
      *
      * @param password The plain text password to be hashed
      * @return The hashed password
      */
-    public String hashPassword(String password) {
+    public static String hashPassword(String password) {
         return ENCODER.encode(password);
     }
 
-    /**
-     * Verifies if the plain text password matches the hashed password
-     *
-     * @param plainTextPassword The password typed by the user
-     * @param hashedPassword The hashed password stored in the database
-     * @return True if the passwords match; false otherwise
-     */
-    public static boolean verifyPassword(String plainTextPassword, String hashedPassword) {
-        return ENCODER.matches(plainTextPassword, hashedPassword);
+    public static PasswordEncoder getPasswordEncoder() {
+        return ENCODER;
     }
 }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -76,14 +75,14 @@ public class UserController {
             // Try to get User
             Optional<User> user = userService.getUserById(id);
             if (user.isPresent()) {
-                log.info("Getting user " + user.get().getUsername());
+                log.info("Getting user {}", user.get().getUsername());
 
-                // Build successfull response if User was retrieved
-                DataResponse<User> response = new DataResponse<User>(
+                // Build successful response if User was retrieved
+                DataResponse<User> response = new DataResponse<>(
                     true,
                     "success",
                     "User successfully retrieved",
-                    user
+                    user.get()
                 );
 
                 // Return User
@@ -150,7 +149,7 @@ public class UserController {
 
         } catch (Exception e) {
             // Log error
-            log.error("Error deleting user with id {}", id, e.getMessage(), e);
+            log.error("Error deleting user with id {}, {}", id, e.getMessage(), e);
 
             BaseResponse errorResponse = new BaseResponse(
                 false,

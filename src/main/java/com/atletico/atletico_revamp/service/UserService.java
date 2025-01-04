@@ -1,7 +1,5 @@
 package com.atletico.atletico_revamp.service;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,8 +26,8 @@ public class UserService implements UserDetailsService {
     }
 
     // Create or Update a User
-    public User saveUser(User user) {
-        return userRepository.save(user);
+    public void saveUser(User user) {
+        userRepository.save(user);
     }
 
     // Get a User by ID

@@ -16,7 +16,7 @@ public class SecurityEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         response.setContentType("application/json");
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("error", "Unauthorized");

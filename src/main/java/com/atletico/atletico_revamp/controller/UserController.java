@@ -2,6 +2,9 @@ package com.atletico.atletico_revamp.controller;
 
 import java.util.Optional;
 
+import com.atletico.atletico_revamp.dto.ApiError;
+import com.atletico.atletico_revamp.dto.Metadata;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.atletico.atletico_revamp.dto.BaseResponse;
-import com.atletico.atletico_revamp.dto.DataResponse;
+import com.atletico.atletico_revamp.dto.ApiResponse;
 import com.atletico.atletico_revamp.entities.User;
 import com.atletico.atletico_revamp.service.UserService;
 
@@ -36,17 +38,19 @@ public class UserController {
 
     // Create or Update a User
     @PostMapping
-    public ResponseEntity<BaseResponse> createOrUpdateUser(@RequestBody User user) {
+    public ResponseEntity<ApiResponse<User>> createOrUpdateUser(@RequestBody User user, HttpServletRequest request) {
         try {
             // Save User
             userService.saveUser(user);
             log.info("User created or updated: {}", user.getUsername());
 
             // Build response
-            BaseResponse response = new BaseResponse(
+            ApiResponse<User> response = new ApiResponse<>(
                 true,
                 "success",
-                "User " + user.getUsername() + " successfully created or updated"
+                "User " + user.getUsername() + " successfully created or updated",
+                user,
+                null
             );
 
             // Return response
@@ -56,10 +60,16 @@ public class UserController {
             log.error("Error creating or updating user", e);
 
             // Build response
-            BaseResponse errorResponse = new BaseResponse(
+            ApiResponse<User> errorResponse = new ApiResponse<>(
                 false,
                 "fail",
-                "User failed to be created or updated"
+                "User failed to be created or updated",
+                user,
+                new ApiError(
+                    500,
+                    e.getMessage(),
+                    new Metadata(request.getRequestURI())
+                )
             );
 
             // Return response
@@ -69,7 +79,7 @@ public class UserController {
 
     // Get User by id
     @GetMapping("/get/{id}")
-    public ResponseEntity<DataResponse<User>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<User>> getUserById(@PathVariable Long id, HttpServletRequest request) {
         log.info("Attempting to get user {}", id);
         try {
             // Try to get User
@@ -78,11 +88,12 @@ public class UserController {
                 log.info("Getting user {}", user.get().getUsername());
 
                 // Build successful response if User was retrieved
-                DataResponse<User> response = new DataResponse<>(
+                ApiResponse<User> response = new ApiResponse<>(
                     true,
                     "success",
                     "User successfully retrieved",
-                    user.get()
+                    user.get(),
+                    null
                 );
 
                 // Return User
@@ -91,11 +102,16 @@ public class UserController {
 
             log.warn("Attempting to get non existent user with id {}", id);
 
-            DataResponse<User> response = new DataResponse<>(
+            ApiResponse<User> response = new ApiResponse<>(
                 false,
                 "fail",  
                 "Unable to find user of id " + id, 
-                null
+                null,
+                new ApiError(
+                    404,
+                    "Unable to find user of id " + id,
+                    new Metadata(request.getRequestURI())
+                )
             );
 
             // Return error
@@ -105,11 +121,17 @@ public class UserController {
             log.error("Error retrieving user of id {}", id, e);
 
             // Build failed data response
-            DataResponse<User> errorResponse = new DataResponse<>(
+            ApiResponse<User> errorResponse = new ApiResponse<>(
                 false, 
                 "fail", 
                 "Error retrieving user: " + e.getMessage(), 
-                null);
+                null,
+                new ApiError(
+                    500,
+                    e.getMessage(),
+                    new Metadata(request.getRequestURI())
+                )
+            );
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(errorResponse);
@@ -118,7 +140,7 @@ public class UserController {
 
     // Delete User
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<BaseResponse> deleteUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteUserById(@PathVariable Long id, HttpServletRequest request) {
         try {
             // Check if user exists before attempting to delete user
             Optional<User> user = userService.getUserById(id);
@@ -127,10 +149,16 @@ public class UserController {
                 log.warn("Attempted to delete non-existent user with id {}", id);
 
                 // Build not found response
-                BaseResponse response = new BaseResponse(
+                ApiResponse<Void> response = new ApiResponse<>(
                     false,
                     "fail",
-                    "User with id " + id + " does not exist"
+                    "User with id " + id + " does not exist",
+                    null,
+                    new ApiError(
+                        404,
+                        "User with id " + id + " does not exist",
+                        new Metadata(request.getRequestURI())
+                    )
                 );
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
@@ -140,10 +168,12 @@ public class UserController {
             log.info("Deleted user with id {}", id);
 
             // Build success response
-            BaseResponse response = new BaseResponse(
+            ApiResponse<Void> response = new ApiResponse<>(
                 true,
                 "success",
-                "User with id " + id + " successfully deleted"
+                "User with id " + id + " successfully deleted",
+                null,
+                null
             );
             return ResponseEntity.status(HttpStatus.OK).body(response);
 
@@ -151,11 +181,18 @@ public class UserController {
             // Log error
             log.error("Error deleting user with id {}, {}", id, e.getMessage(), e);
 
-            BaseResponse errorResponse = new BaseResponse(
+            ApiResponse<Void> errorResponse = new ApiResponse<>(
                 false,
                 "fail",
-                "Error deleting user with id " + id + ": " + e.getMessage()
+                "Error deleting user with id " + id + ": " + e.getMessage(),
+                null,
+                new ApiError(
+                    500,
+                    e.getMessage(),
+                    new Metadata(request.getRequestURI())
+                )
             );
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }

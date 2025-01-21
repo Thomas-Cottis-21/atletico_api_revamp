@@ -1,9 +1,11 @@
 package com.atletico.atletico_revamp.controller;
 
 import com.atletico.atletico_revamp.config.JwtConfigurationProperties;
+import com.atletico.atletico_revamp.dto.ApiResponse;
 import com.atletico.atletico_revamp.dto.LoginRequest;
 import com.atletico.atletico_revamp.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,12 +29,19 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
         );
         if (authentication.isAuthenticated()) {
-            return ResponseEntity.ok(this.jwtService.generateToken(loginRequest.getUsername()));
+            ApiResponse<String> apiResponse = new ApiResponse<String>(
+                    true,
+                    "success",
+                    "Login successful! Token included in 'data' field",
+                    this.jwtService.generateToken(loginRequest.getUsername()),
+                    null
+            );
+            return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
         } else {
             throw new UsernameNotFoundException("Invalid username or password");
         }
